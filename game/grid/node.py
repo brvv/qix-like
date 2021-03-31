@@ -20,3 +20,4 @@ class Node:
     
     def set_state(self, new_state):
         self.state = new_state
+        self.color = new_state.value
