@@ -20,7 +20,7 @@ class Game:
         self.grid.draw(self.WIN)
         pygame.display.update()
 
-    def player_handle_movement(self, keys_pressed):
+    def handle_player_movement(self, keys_pressed):
         #TODO: Implement speed in terms of velocity & acceleration to prevent clunky movement
         if keys_pressed[pygame.K_a]:
             self.grid.move_player(MovementDirection.left)
@@ -41,7 +41,7 @@ class Game:
                     run = False
 
                 keys_pressed = pygame.key.get_pressed()
-                self.player_handle_movement(keys_pressed)
+                self.handle_player_movement(keys_pressed)
 
 
                 self.update()
