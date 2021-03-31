@@ -12,6 +12,7 @@ class Grid:
     def __init__(self, width, length, drawing_offset=(0,0)):
         self._offset = drawing_offset
         self.grid = self._init_grid(width, length)
+        self._fill_border()
         self.grid_size = (width, length)
         self.spiders = []
         self.player = Player((self.NODE_SIZE,self.NODE_SIZE))
@@ -26,7 +27,7 @@ class Grid:
         new_x = current_player_position[0] + direction.value[0]
         new_y = current_player_position[1] + direction.value[1]
 
-        if self._are_valid_coordinates([new_x, new_y]):
+        if self._are_valid_coordinates([new_x, new_y]) and self._are_coordinates_walkable([new_x, new_y]):
             self.player.set_position([new_x, new_y])
 
     #This function returns if the coordinates on the grid are valid for movement
@@ -35,10 +36,30 @@ class Grid:
         is_y_valid = 0 <= coordinates[1] <= self.grid_size[1] - 1
         return is_x_valid and is_y_valid 
 
+    def _are_coordinates_walkable(self, coordinates):
+        return self._get_node(coordinates).get_state() == State.WALKABLE_LINE
+
+    def _get_node(self, coordinates):
+        return self.grid[coordinates[0]][coordinates[1]]
+
     #This function does all the drawing
     def draw(self, window):
         self._draw_grid(window)
         self._draw_objects(window)
+
+    def _fill_border(self):
+        self._fill_column(0, State.WALKABLE_LINE)
+        self._fill_column(-1, State.WALKABLE_LINE)
+        self._fill_row(0, State.WALKABLE_LINE)
+        self._fill_row(-1, State.WALKABLE_LINE)
+
+    def _fill_column(self, column_index, state):
+        for node in (self.grid[column_index]):
+            node.set_state(state)
+
+    def _fill_row(self, row_index, state):
+        for node in ([column[row_index] for column in self.grid]):
+            node.set_state(state)
 
     def _get_drawing_coordinates_from_grid(self, grid_coordinates):
         x, y = grid_coordinates

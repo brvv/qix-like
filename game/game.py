@@ -39,6 +39,7 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
+                    break
 
                 keys_pressed = pygame.key.get_pressed()
                 self.handle_player_movement(keys_pressed)
