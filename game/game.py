@@ -20,8 +20,12 @@ class Game:
         self.grid.draw(self.WIN)
         pygame.display.update()
 
+
     def handle_player_movement(self, keys_pressed):
         #TODO: Implement speed in terms of velocity & acceleration to prevent clunky movement
+        if keys_pressed[pygame.K_SPACE]:
+            self.grid.activate_drawing_mode()
+
         if keys_pressed[pygame.K_a]:
             self.grid.move_player(MovementDirection.left)
         if keys_pressed[pygame.K_d]:
@@ -30,6 +34,7 @@ class Game:
             self.grid.move_player(MovementDirection.up)
         if keys_pressed[pygame.K_s]:
             self.grid.move_player(MovementDirection.down)
+
 
     def gameloop(self):
         clock = pygame.time.Clock()

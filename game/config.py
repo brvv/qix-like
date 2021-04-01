@@ -14,3 +14,7 @@ class GridConfig(Enum):
 
 class PlayerConfig(Enum):
     PLAYER_SPRITE = pygame.image.load('game/player/parrot.png')
+
+class QixConfig(Enum):
+    pass
+    #QIX_SPRITE = pygame.image.load('game/qix/')

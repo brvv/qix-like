@@ -1,4 +1,5 @@
 from enum import Enum
+import pygame
 
 class MovementDirection(Enum):
     left = (-1, 0)
