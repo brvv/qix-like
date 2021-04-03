@@ -142,37 +142,15 @@ class Grid:
             self._fill_node_from_coordinates(coordinates, state)
             
     
-    def _fill_claimed(self,lst,state):
+    def _drop_old_walkable_coordinates(self,lst,state):
         if len(lst) <= 3:
             return
         dropped = self._find_dropped_walkable_coordinates(lst[0],lst[-1],lst)
-        
-        #change
-        border = dropped + lst
-        print(dropped)
-        start_x = (max(border)[0] + min(border)[0]) // 2
-        start_y = (max(border,key = lambda x:x[1])[1] + min(border,key = lambda x:x[1])[1]) // 2
-        #self._fill_claimed_colour(start_x,start_y)
-        
+
         for coordinates in dropped:
             self._fill_node_from_coordinates(coordinates, State.DROPPED_WALKABLE_LINE)
         
         
-    
-    def _fill_claimed_colour(self,x,y):
-        
-        if not self._are_coordinates_empty([x,y]) or not self._are_valid_coordinates([x,y]):
-            return
-        self._fill_node_from_coordinates([x,y], State.BLUE_FILL)
-        
-        self._fill_claimed_colour(x+1,y)
-        self._fill_claimed_colour(x-1,y)
-        self._fill_claimed_colour(x,y+1)
-        self._fill_claimed_colour(x,y-1)
-        
-    
-    
-    
     #must be updated when qix enemy is implemented
     def _find_dropped_walkable_coordinates(self,start,end,lst): 
         dropped_direction_1 = []
