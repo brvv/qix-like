@@ -35,7 +35,11 @@ class Grid:
             if self.player.is_counter_above_thres(2):
                 self.player.decrease_movement_counter(2)
                 direction = self.player.get_movement_direction()
+                self._update_node(self.player.get_position())
                 self.move_player(direction)
+                
+    def _update_node(self, coordinates):
+        self._get_node(coordinates).update_node()
     
     def start_moving_player(self, direction):
         self.player.start_moving()
