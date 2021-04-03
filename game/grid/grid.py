@@ -2,6 +2,7 @@ import pygame
 from .node import Node
 from .node_states import State
 from ..player.player import Player
+from ..qix.qix import Qix
 from ..config import GridConfig
 
 import random
@@ -16,12 +17,20 @@ class Grid:
         self.grid_size = (width, length)
         self.spiders = []
         self.player = Player((self.NODE_SIZE,self.NODE_SIZE))
+        self.qix = Qix((self.NODE_SIZE,self.NODE_SIZE))
+
+        self._width = width
+        self._length = length
         self._drawn_line = []
-        #self.qix = Qix()
+        
 
     #This function does all the logic
     def update(self):
         pass
+
+    def draw(self, window):
+        self._draw_grid(window)
+        self._draw_objects(window)
 
     def move_player(self, direction):
         if (self._is_drawing_mode_on()):
@@ -29,14 +38,14 @@ class Grid:
         else:
             self._move_player_simple(direction)
 
-    def _is_drawing_mode_on(self):
-        return self.player.is_drawing_mode_on()
-
     def activate_drawing_mode(self):
         self.player.set_drawing_mode(True)
 
     def deactivate_drawing_mode(self):
         self.player.set_drawing_mode(False)
+
+    def _is_drawing_mode_on(self):
+        return self.player.is_drawing_mode_on()
 
     def _move_player_simple(self, direction):
         current_player_position = self.player.get_position()
@@ -61,7 +70,63 @@ class Grid:
 
         elif self._are_coordinates_walkable(new_coordinates):
             self.deactivate_drawing_mode()
-            self._fill_drawn_line()
+            if len(self._drawn_line) > 0:
+                self._fill_area_opposite_to_qix(new_coordinates)
+                self._fill_drawn_line()
+
+
+
+    def _fill_area_opposite_to_qix(self, new_coordinates):
+        flood_fill_start_coordinates = self._find_flood_fill_start_coordinates(new_coordinates)
+        flood_fill_queue = self._get_flood_fill_queue_opposite_to_qix(flood_fill_start_coordinates)
+        self._fill_nodes_from_coordinates_list(flood_fill_queue, State.RED_FILL)
+
+    def _find_flood_fill_start_coordinates(self, new_coordinates):
+        drawn_line_end = self._drawn_line[-1]
+
+        delta_x = new_coordinates[0] - drawn_line_end[0]
+        delta_y = new_coordinates[1] - drawn_line_end[1]
+
+        if delta_y == 0:
+            return [[drawn_line_end[0], drawn_line_end[1]-1], [drawn_line_end[0], drawn_line_end[1]+1]]
+        elif delta_x == 0:
+            return [[drawn_line_end[0]-1, drawn_line_end[1]], [drawn_line_end[0]+1, drawn_line_end[1]]]
+
+    def _get_flood_fill_queue_opposite_to_qix(self, coordinates):
+        queue1 = self._get_fill_queue_(coordinates[0])
+        queue2 = self._get_fill_queue_(coordinates[1])
+        return queue1 if queue1 != None else queue2
+
+    def _get_fill_queue_(self, coordinates):
+        queue = []
+        queue.append(coordinates)
+        qix_coordinates = self.qix.get_position()
+
+        fill_queue = []
+        visited_matrix = [[0 for ii in range(self._length)] for i in range(self._width)]
+
+        while len(queue) > 0:
+            current_node_coordinates = queue.pop()
+            visited_matrix[current_node_coordinates[0]][current_node_coordinates[1]] = 1
+            fill_queue.append(current_node_coordinates)
+            neighbours = self._get_empty_neighbouring_nodes_coordinates(current_node_coordinates)
+            for neighbour in neighbours:
+                if neighbour == qix_coordinates:
+                    return None
+                if visited_matrix[neighbour[0]][neighbour[1]] != 1:
+                    queue.append(neighbour)
+
+        return fill_queue
+
+    def _get_empty_neighbouring_nodes_coordinates(self, coordinates):
+        neighbouring_coordinates = [[coordinates[0]-1,coordinates[1]],[coordinates[0]+1,coordinates[1]],
+                                    [coordinates[0],coordinates[1]-1],[coordinates[0],coordinates[1]+1]]
+
+        valid_neighbours = []
+        for coordinate_pair in neighbouring_coordinates:
+            if self._are_valid_coordinates(coordinate_pair) and self._are_coordinates_empty(coordinate_pair):
+                valid_neighbours.append(coordinate_pair)
+        return valid_neighbours
 
     def _fill_drawn_line(self):
         self._fill_nodes_from_coordinates_list(self._drawn_line, State.WALKABLE_LINE)
@@ -90,11 +155,6 @@ class Grid:
 
     def _get_node(self, coordinates):
         return self.grid[coordinates[0]][coordinates[1]]
-
-    #This function does all the drawing
-    def draw(self, window):
-        self._draw_grid(window)
-        self._draw_objects(window)
 
     def _fill_border(self):
         self._fill_column(0, State.WALKABLE_LINE)
@@ -126,7 +186,9 @@ class Grid:
         pass
 
     def _draw_qix(self, window):
-        pass
+        qix_position = self.qix.get_position()
+        drawing_coordinates = self._get_drawing_coordinates_from_grid(qix_position)
+        self.qix.draw(window, drawing_coordinates)
 
     def _draw_player(self, window):
         player_position = self.player.get_position()
