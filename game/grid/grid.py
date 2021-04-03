@@ -25,6 +25,7 @@ class Grid:
 
     def move_player(self, direction):
         if (self._is_drawing_mode_on()):
+            
             self._move_player_while_drawing(direction)
         else:
             self._move_player_simple(direction)
@@ -33,6 +34,8 @@ class Grid:
         return self.player.is_drawing_mode_on()
 
     def activate_drawing_mode(self):
+        if self._drawn_line == []:
+            self._drawn_line.append(self.player.get_position())
         self.player.set_drawing_mode(True)
 
     def deactivate_drawing_mode(self):
@@ -54,10 +57,11 @@ class Grid:
         new_coordinates = self._move_player_simple(direction)
         if not self._are_valid_coordinates(new_coordinates):
             return None
-
+            
+        self._drawn_line.append(new_coordinates)
         if self._are_coordinates_drawable(new_coordinates):
             self._fill_node_from_coordinates(new_coordinates, State.DRAWN_LINE)
-            self._drawn_line.append(new_coordinates)
+            
 
         elif self._are_coordinates_walkable(new_coordinates):
             self.deactivate_drawing_mode()
@@ -65,11 +69,87 @@ class Grid:
 
     def _fill_drawn_line(self):
         self._fill_nodes_from_coordinates_list(self._drawn_line, State.WALKABLE_LINE)
+        self._fill_claimed(self._drawn_line,State.BLUE_FILL)
         self._drawn_line = []
 
     def _fill_nodes_from_coordinates_list(self, lst, state):
         for coordinates in lst:
             self._fill_node_from_coordinates(coordinates, state)
+            
+    
+    def _fill_claimed(self,lst,state):
+        if len(lst) <= 3:
+            return
+        dropped = self._find_dropped_walkable_coordinates(lst[0],lst[-1],lst)
+        
+        #change
+        border = dropped + lst
+        print(dropped)
+        start_x = (max(border)[0] + min(border)[0]) // 2
+        start_y = (max(border,key = lambda x:x[1])[1] + min(border,key = lambda x:x[1])[1]) // 2
+        #self._fill_claimed_colour(start_x,start_y)
+        
+        for coordinates in dropped:
+            self._fill_node_from_coordinates(coordinates, State.DROPPED_WALKABLE_LINE)
+        
+        
+    
+    def _fill_claimed_colour(self,x,y):
+        
+        if not self._are_coordinates_empty([x,y]) or not self._are_valid_coordinates([x,y]):
+            return
+        self._fill_node_from_coordinates([x,y], State.BLUE_FILL)
+        
+        self._fill_claimed_colour(x+1,y)
+        self._fill_claimed_colour(x-1,y)
+        self._fill_claimed_colour(x,y+1)
+        self._fill_claimed_colour(x,y-1)
+        
+    
+    
+    
+    #must be updated when qix enemy is implemented
+    def _find_dropped_walkable_coordinates(self,start,end,lst): 
+        dropped_direction_1 = []
+        dropped_direction_2 = []
+        
+        self._check_next_walkable(start,end,lst,dropped_direction_1)
+        self._check_next_walkable(start,end,lst,dropped_direction_2,dropped_direction_1[1])
+        
+        dropped_direction_1.pop(0)
+        dropped_direction_2.pop(0)
+        
+        if len(dropped_direction_1) < len(dropped_direction_2):
+            return dropped_direction_1
+        return dropped_direction_2
+        
+        
+    def _check_next_walkable(self,nxt,end,lst,dropped_lst,exclude = []):
+    
+        def checker(x,y):
+            if not self._are_valid_coordinates([x,y]):
+                return False
+            return self._are_coordinates_walkable([x,y]) and ([x,y] not in lst) and ([x,y] not in dropped_lst) and ([x,y] != exclude)
+        
+        
+        if nxt == end:
+            return 
+            
+        dropped_lst.append(nxt)
+        x,y = nxt
+        
+        if checker(x+1,y): 
+            return self._check_next_walkable([x+1,y],end,lst,dropped_lst,exclude)
+        elif checker(x-1,y):           
+            return self._check_next_walkable([x-1,y],end,lst,dropped_lst,exclude)
+        elif checker(x,y+1):          
+            return self._check_next_walkable([x,y+1],end,lst,dropped_lst,exclude)
+        elif checker(x,y-1):
+            return self._check_next_walkable([x,y-1],end,lst,dropped_lst,exclude)
+        return None
+        
+       
+         
     
     def _are_valid_coordinates(self, coordinates):
         is_x_valid = 0 <= coordinates[0] <= self.grid_size[0] - 1
