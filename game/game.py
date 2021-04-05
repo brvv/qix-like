@@ -36,8 +36,8 @@ class Game:
             self.grid.start_moving_player(MovementDirection.down)
 
     def handle_key_up(self, key_released):
-        if key_released == pygame.K_SPACE:
-            self.grid.deactivate_drawing_mode()
+        #if key_released == pygame.K_SPACE:
+        #    self.grid.deactivate_drawing_mode()
         if key_released == pygame.K_a:
             self.grid.stop_moving_player(MovementDirection.left)
         if key_released == pygame.K_d:

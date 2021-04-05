@@ -13,14 +13,17 @@ class Grid:
     def __init__(self, width, length, drawing_offset=(0,0)):
         self._offset = drawing_offset
         self.grid = self._init_grid(width, length)
-        self._fill_border()
+        self._width = width
+        self._length = length
         self.grid_size = (width, length)
+        
+        self.border = []
+        self._fill_border()
+        
         self.spiders = []
         self.player = Player((self.NODE_SIZE,self.NODE_SIZE))
         self.qix = Qix((self.NODE_SIZE,self.NODE_SIZE))
 
-        self._width = width
-        self._length = length
         self._drawn_line = []
         
     #This function does all the logic
@@ -152,6 +155,12 @@ class Grid:
         return [[coordinates[0]-1,coordinates[1]],[coordinates[0]+1,coordinates[1]],
                 [coordinates[0],coordinates[1]-1],[coordinates[0],coordinates[1]+1]]
     
+    def _get_extended_neighbouring_nodes_coordinates(self, coordinates):
+        temp = self._get_neighbouring_nodes_coordinates(coordinates)
+        temp += [[coordinates[0]-1,coordinates[1]-1], [coordinates[0]-1,coordinates[1]+1], 
+                        [coordinates[0]+1,coordinates[1]-1] , [coordinates[0]+1,coordinates[1]+1]]
+        return [c for c in temp if self._are_valid_coordinates(c)]
+        
     
     def _get_empty_neighbouring_nodes_coordinates(self, coordinates):
         neighbouring_coordinates = self._get_neighbouring_nodes_coordinates(coordinates)
@@ -163,70 +172,24 @@ class Grid:
 
     def _fill_drawn_line(self):
         self._fill_nodes_from_coordinates_list(self._drawn_line, State.WALKABLE_LINE)
-        self._drop_old_walkable_coordinates(self._drawn_line)
+        self._add_walkable_coordinates_to_border(self._drawn_line)
+        self._drop_old_walkable_coordinates()
         self._drawn_line = []
 
     def _fill_nodes_from_coordinates_list(self, lst, state):
         for coordinates in lst:
             self._fill_node_from_coordinates(coordinates, state)
             
+    def _add_walkable_coordinates_to_border(self,lst):
+        for coordinates in lst:
+            self.border.append(coordinates)
     
-    def _drop_old_walkable_coordinates(self,lst):
-        if len(lst) <= 3: #check/change
-            return
-        dropped = self._find_dropped_walkable_coordinates(lst[0],self.player.get_position(),lst)
-
-        for coordinates in dropped:
-            self._fill_node_from_coordinates(coordinates, State.DROPPED_WALKABLE_LINE)
+    def _drop_old_walkable_coordinates(self):
+        for walkable_node in self.border:
+            neighbours = self._get_extended_neighbouring_nodes_coordinates(walkable_node)
+            if not any(self._are_coordinates_empty(item) for item in neighbours):
+                self._fill_node_from_coordinates(walkable_node,State.DROPPED_WALKABLE_LINE)
         
-        
-   
-    def _find_dropped_walkable_coordinates(self,start,end,lst): 
-        dropped_direction_1 = []
-        dropped_direction_2 = []     
-        
-        self._check_next_walkable(start,end,lst,dropped_direction_1)
-        self._check_next_walkable(start,end,lst,dropped_direction_2,dropped_direction_1[1])
-        
-        dropped_direction_1.pop(0)
-        dropped_direction_2.pop(0)
-        
-        return self._verify_border(dropped_direction_1,dropped_direction_2,self.player.get_position())
-        
-        
-    def _verify_border(self,lst1,lst2,coordinates):
-        temp = self._find_flood_fill_start_coordinates(coordinates)
-        neighbours = self._get_neighbouring_nodes_coordinates(temp[0])
-        
-        if self._get_fill_queue_(temp[0]) != None and any(item in neighbours for item in lst1):
-            return lst1
-        return lst2
-        
-    def _check_next_walkable(self,nxt,end,lst,dropped_lst,exclude = []):
-        
-        def checker(x,y):
-            if not self._are_valid_coordinates([x,y]):
-                return False
-            return self._are_coordinates_walkable([x,y]) and ([x,y] not in lst + dropped_lst + [exclude])
-        
-        if nxt == end:
-            return 
-            
-        dropped_lst.append(nxt)
-        x,y = nxt
-        
-        if checker(x+1,y): 
-            return self._check_next_walkable([x+1,y],end,lst,dropped_lst,exclude)
-        elif checker(x-1,y):           
-            return self._check_next_walkable([x-1,y],end,lst,dropped_lst,exclude)
-        elif checker(x,y+1):          
-            return self._check_next_walkable([x,y+1],end,lst,dropped_lst,exclude)
-        elif checker(x,y-1):
-            return self._check_next_walkable([x,y-1],end,lst,dropped_lst,exclude)
-        return None
-        
-       
-         
     
     def _are_valid_coordinates(self, coordinates):
         is_x_valid = 0 <= coordinates[0] <= self.grid_size[0] - 1
@@ -255,13 +218,25 @@ class Grid:
         self._fill_row(-1, State.WALKABLE_LINE)
 
     def _fill_column(self, column_index, state):
+        row_index = 0
+        column_index_val = self._width-1 if column_index < 0 else column_index
+        
         for node in (self.grid[column_index]):
             node.set_state(state)
-
+            self.border.append([column_index_val,row_index])
+            row_index += 1
+            
+            
     def _fill_row(self, row_index, state):
+        column_index = 0
+        row_index_val = self._length - 1 if row_index < 0 else row_index
+        
         for node in ([column[row_index] for column in self.grid]):
             node.set_state(state)
-
+            self.border.append([column_index,row_index_val])
+            column_index += 1
+            
+    
     def _fill_node_from_coordinates(self, coordinates, state):
         self.grid[coordinates[0]][coordinates[1]].set_state(state)
 
