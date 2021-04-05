@@ -2,18 +2,22 @@ from enum import Enum
 import pygame
 
 class WindowConfig(Enum):
-    WIDTH = 800
-    HEIGHT = 800
+    #WIDTH = 800
+    #HEIGHT = 800
+    WIDTH = 1616
+    HEIGHT = 1616
     FPS = 60
 
 class GridConfig(Enum):
-    GRID_WIDTH = 100
-    GRID_LENGTH = 100
+    #BOTH HAVE TO BE AN ODD NUMBER
+    GRID_WIDTH = 101
+    GRID_LENGTH = 101
     NODE_SIZE = WindowConfig.WIDTH.value // GRID_WIDTH
 
 
 class PlayerConfig(Enum):
     PLAYER_SPRITE = pygame.image.load('game/player/parrot.png')
+    PLAYER_VELOCITY = 1
 
 class QixConfig(Enum):
     QIX_SPRITE = pygame.image.load('game/qix/balloon.png')
