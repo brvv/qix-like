@@ -23,10 +23,31 @@ class Grid:
         self._length = length
         self._drawn_line = []
         
-
     #This function does all the logic
     def update(self):
-        pass
+        self._update_player()
+
+    def _update_player(self):
+        if self.player.get_velocity == 0.0:
+            return None
+        else:
+            self.player.increase_movement_counter()
+            if self.player.is_counter_above_thres(2):
+                self.player.decrease_movement_counter(2)
+                direction = self.player.get_movement_direction()
+                self._update_node(self.player.get_position())
+                self.move_player(direction)
+                
+    def _update_node(self, coordinates):
+        self._get_node(coordinates).update_node()
+    
+    def start_moving_player(self, direction):
+        self.player.start_moving()
+        self.player.set_movement_direction(direction)
+
+    def stop_moving_player(self, direction):
+        if self.player.get_movement_direction() == direction:
+            self.player.stop_moving()
 
     def draw(self, window):
         self._draw_grid(window)
@@ -52,19 +73,23 @@ class Grid:
 
     def _move_player_simple(self, direction):
         current_player_position = self.player.get_position()
-        new_x = current_player_position[0] + direction.value[0]
-        new_y = current_player_position[1] + direction.value[1]
-        coordinates = [new_x, new_y]
+        new_x_1 = current_player_position[0] + direction.value[0]
+        new_y_1 = current_player_position[1] + direction.value[1]
+        new_x_2 = new_x_1 + direction.value[0]
+        new_y_2 = new_y_1 + direction.value[1]
 
-        if self._are_valid_coordinates(coordinates):
-            if  self._are_coordinates_walkable(coordinates):
-                self.player.set_position(coordinates)
+        coordinates1 = [new_x_1, new_y_1]
+        coordinates2 = [new_x_2, new_y_2]
+
+        if self._are_valid_coordinates(coordinates1) and self._are_valid_coordinates(coordinates2):
+            if  self._are_coordinates_walkable(coordinates1) and self._are_coordinates_walkable(coordinates2):
+                self.player.set_position(coordinates2)
         
-        return coordinates
+                return [coordinates1, coordinates2]
 
     def _move_player_while_drawing(self, direction):
         new_coordinates = self._move_player_simple(direction)
-        if not self._are_valid_coordinates(new_coordinates):
+        if new_coordinates == None:
             return None
             
         self._drawn_line.append(new_coordinates)
@@ -79,6 +104,20 @@ class Grid:
                 self._fill_drawn_line()
 
 
+        for coordinates in new_coordinates:
+            if not self._are_valid_coordinates(coordinates):
+                return None
+
+
+            if self._are_coordinates_drawable(coordinates):
+                self._fill_node_from_coordinates(coordinates, State.DRAWN_LINE)
+                self._drawn_line.append(coordinates)
+
+            elif self._are_coordinates_walkable(coordinates):
+                self.deactivate_drawing_mode()
+                if len(self._drawn_line) > 0:
+                    self._fill_area_opposite_to_qix(coordinates)
+                    self._fill_drawn_line()
 
     def _fill_area_opposite_to_qix(self, new_coordinates):
         flood_fill_start_coordinates = self._find_flood_fill_start_coordinates(new_coordinates)
