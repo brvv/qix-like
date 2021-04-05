@@ -11,41 +11,30 @@ class Game:
     def __init__(self):
         pygame.display.set_caption("QIX")
         self.grid = Grid(GridConfig.GRID_WIDTH.value, GridConfig.GRID_LENGTH.value)
-        self.WIN.fill((255,255,255))
 
     def update(self):
-        self.grid.update()
+        pass
 
     def draw(self):
+        self.WIN.fill((255,255,255))
         self.grid.draw(self.WIN)
         pygame.display.update()
 
 
-
-    def handle_key_down(self, key_pressed):
-        if key_pressed == pygame.K_SPACE:
+    def handle_player_movement(self, keys_pressed):
+        #TODO: Implement speed in terms of velocity & acceleration to prevent clunky movement
+        if keys_pressed[pygame.K_SPACE]:
             self.grid.activate_drawing_mode()
-        
-        if key_pressed == pygame.K_a:
-            self.grid.start_moving_player(MovementDirection.left)
-        if key_pressed == pygame.K_d:
-            self.grid.start_moving_player(MovementDirection.right)
-        if key_pressed == pygame.K_w:
-            self.grid.start_moving_player(MovementDirection.up)
-        if key_pressed == pygame.K_s:
-            self.grid.start_moving_player(MovementDirection.down)
 
-    def handle_key_up(self, key_released):
-        if key_released == pygame.K_SPACE:
-            self.grid.deactivate_drawing_mode()
-        if key_released == pygame.K_a:
-            self.grid.stop_moving_player(MovementDirection.left)
-        if key_released == pygame.K_d:
-            self.grid.stop_moving_player(MovementDirection.right)
-        if key_released == pygame.K_w:
-            self.grid.stop_moving_player(MovementDirection.up)
-        if key_released == pygame.K_s:
-            self.grid.stop_moving_player(MovementDirection.down)
+        if keys_pressed[pygame.K_a]:
+            self.grid.move_player(MovementDirection.left)
+        if keys_pressed[pygame.K_d]:
+            self.grid.move_player(MovementDirection.right)
+        if keys_pressed[pygame.K_w]:
+            self.grid.move_player(MovementDirection.up)
+        if keys_pressed[pygame.K_s]:
+            self.grid.move_player(MovementDirection.down)
+
 
     def gameloop(self):
         clock = pygame.time.Clock()
@@ -57,11 +46,9 @@ class Game:
                     run = False
                     break
 
-                if event.type == pygame.KEYDOWN:
-                    self.handle_key_down(event.key)
+                keys_pressed = pygame.key.get_pressed()
+                self.handle_player_movement(keys_pressed)
 
-                if event.type == pygame.KEYUP:
-                    self.handle_key_up(event.key)
 
                 self.update()
                 self.draw()

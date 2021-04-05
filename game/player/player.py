@@ -10,39 +10,9 @@ class Player:
         #[x,y]
         self.position = [0,0]
         self.is_drawing = False
-        self._velocity = 0
-        self._movement_counter = 0.0
-        self._movement_direction = None
 
     def draw(self, window, coord):
         window.blit(self.image, coord)
-
-    def get_velocity(self):
-        return self._velocity
-
-    def set_movement_direction(self, direction):
-        self._movement_direction = direction
-    
-    def get_movement_direction(self):
-        return self._movement_direction
-
-    def increase_movement_counter(self):
-        self._movement_counter += self._velocity
-
-    def decrease_movement_counter(self, value = 2):
-        self._movement_counter -= value
-
-    def reset_movement_counter(self):
-        self._movement_counter = 0.0
-
-    def is_counter_above_thres(self, thres):
-        return self._movement_counter >= thres
-
-    def start_moving(self):
-        self._velocity = PlayerConfig.PLAYER_VELOCITY.value
-
-    def stop_moving(self):
-        self._velocity = 0
 
     def get_position(self):
         return self.position
