@@ -2,8 +2,6 @@ from enum import Enum
 import pygame
 
 class WindowConfig(Enum):
-    #WIDTH = 800
-    #HEIGHT = 800
     WIDTH = 1616
     HEIGHT = 1616
     FPS = 60

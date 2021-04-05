@@ -91,24 +91,11 @@ class Grid:
         new_coordinates = self._move_player_simple(direction)
         if new_coordinates == None:
             return None
-            
-        self._drawn_line.append(new_coordinates)
-        if self._are_coordinates_drawable(new_coordinates):
-            self._fill_node_from_coordinates(new_coordinates, State.DRAWN_LINE)
-            
-
-        elif self._are_coordinates_walkable(new_coordinates):
-            self.deactivate_drawing_mode()
-            if len(self._drawn_line) > 0:
-                self._fill_area_opposite_to_qix(new_coordinates)
-                self._fill_drawn_line()
-
-
+        
         for coordinates in new_coordinates:
             if not self._are_valid_coordinates(coordinates):
                 return None
-
-
+            
             if self._are_coordinates_drawable(coordinates):
                 self._fill_node_from_coordinates(coordinates, State.DRAWN_LINE)
                 self._drawn_line.append(coordinates)
@@ -161,10 +148,13 @@ class Grid:
 
         return fill_queue
 
+    def _get_neighbouring_nodes_coordinates(self, coordinates):
+        return [[coordinates[0]-1,coordinates[1]],[coordinates[0]+1,coordinates[1]],
+                [coordinates[0],coordinates[1]-1],[coordinates[0],coordinates[1]+1]]
+    
+    
     def _get_empty_neighbouring_nodes_coordinates(self, coordinates):
-        neighbouring_coordinates = [[coordinates[0]-1,coordinates[1]],[coordinates[0]+1,coordinates[1]],
-                                    [coordinates[0],coordinates[1]-1],[coordinates[0],coordinates[1]+1]]
-
+        neighbouring_coordinates = self._get_neighbouring_nodes_coordinates(coordinates)
         valid_neighbours = []
         for coordinate_pair in neighbouring_coordinates:
             if self._are_valid_coordinates(coordinate_pair) and self._are_coordinates_empty(coordinate_pair):
@@ -173,7 +163,7 @@ class Grid:
 
     def _fill_drawn_line(self):
         self._fill_nodes_from_coordinates_list(self._drawn_line, State.WALKABLE_LINE)
-        self._fill_claimed(self._drawn_line,State.BLUE_FILL)
+        self._drop_old_walkable_coordinates(self._drawn_line)
         self._drawn_line = []
 
     def _fill_nodes_from_coordinates_list(self, lst, state):
@@ -181,19 +171,19 @@ class Grid:
             self._fill_node_from_coordinates(coordinates, state)
             
     
-    def _drop_old_walkable_coordinates(self,lst,state):
-        if len(lst) <= 3:
+    def _drop_old_walkable_coordinates(self,lst):
+        if len(lst) <= 3: #check/change
             return
-        dropped = self._find_dropped_walkable_coordinates(lst[0],lst[-1],lst)
+        dropped = self._find_dropped_walkable_coordinates(lst[0],self.player.get_position(),lst)
 
         for coordinates in dropped:
             self._fill_node_from_coordinates(coordinates, State.DROPPED_WALKABLE_LINE)
         
         
-    #must be updated when qix enemy is implemented
+   
     def _find_dropped_walkable_coordinates(self,start,end,lst): 
         dropped_direction_1 = []
-        dropped_direction_2 = []
+        dropped_direction_2 = []     
         
         self._check_next_walkable(start,end,lst,dropped_direction_1)
         self._check_next_walkable(start,end,lst,dropped_direction_2,dropped_direction_1[1])
@@ -201,18 +191,23 @@ class Grid:
         dropped_direction_1.pop(0)
         dropped_direction_2.pop(0)
         
-        if len(dropped_direction_1) < len(dropped_direction_2):
-            return dropped_direction_1
-        return dropped_direction_2
+        return self._verify_border(dropped_direction_1,dropped_direction_2,self.player.get_position())
         
+        
+    def _verify_border(self,lst1,lst2,coordinates):
+        temp = self._find_flood_fill_start_coordinates(coordinates)
+        neighbours = self._get_neighbouring_nodes_coordinates(temp[0])
+        
+        if self._get_fill_queue_(temp[0]) != None and any(item in neighbours for item in lst1):
+            return lst1
+        return lst2
         
     def _check_next_walkable(self,nxt,end,lst,dropped_lst,exclude = []):
-    
+        
         def checker(x,y):
             if not self._are_valid_coordinates([x,y]):
                 return False
-            return self._are_coordinates_walkable([x,y]) and ([x,y] not in lst) and ([x,y] not in dropped_lst) and ([x,y] != exclude)
-        
+            return self._are_coordinates_walkable([x,y]) and ([x,y] not in lst + dropped_lst + [exclude])
         
         if nxt == end:
             return 
