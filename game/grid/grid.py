@@ -1,9 +1,12 @@
 import pygame
+from random import randint
 from .node import Node
 from .node_states import State
 from ..player.player import Player
 from ..qix.qix import Qix
+from ..sparx.sparx import Sparx
 from ..config import GridConfig
+
 
 import random
 
@@ -20,16 +23,18 @@ class Grid:
         self.border = []
         self._fill_border()
         
-        self.spiders = []
         self.player = Player((self.NODE_SIZE,self.NODE_SIZE))
         self.qix = Qix((self.NODE_SIZE,self.NODE_SIZE))
-
+        self.sparxs = []
+        self._add_sparx()
+        
         self._drawn_line = []
         
     #This function does all the logic
     def update(self):
         self._update_player()
-
+        self._update_sparx()
+    
     def _update_player(self):
         if self.player.get_velocity == 0.0:
             return None
@@ -41,6 +46,13 @@ class Grid:
                 self._update_node(self.player.get_position())
                 self.move_player(direction)
                 
+    def _update_sparx(self):
+        for sparx in self.sparxs:
+            current_position = sparx.get_position()
+            possible_next = [c for c in self._get_neighbouring_nodes_coordinates(current_position) if self._are_coordinates_walkable_line(c)]
+            self._update_node(current_position)
+            sparx.set_position(possible_next)
+            
     def _update_node(self, coordinates):
         self._get_node(coordinates).update_node()
     
@@ -150,10 +162,14 @@ class Grid:
                     queue.append(neighbour)
 
         return fill_queue
-
+    
+    def get_neighbours(self,coordinates):
+        return self._get_neighbouring_nodes_coordinates(coordinates)
+    
     def _get_neighbouring_nodes_coordinates(self, coordinates):
-        return [[coordinates[0]-1,coordinates[1]],[coordinates[0]+1,coordinates[1]],
+        temp = [[coordinates[0]-1,coordinates[1]],[coordinates[0]+1,coordinates[1]],
                 [coordinates[0],coordinates[1]-1],[coordinates[0],coordinates[1]+1]]
+        return [c for c in temp if self._are_valid_coordinates(c)]
     
     def _get_extended_neighbouring_nodes_coordinates(self, coordinates):
         temp = self._get_neighbouring_nodes_coordinates(coordinates)
@@ -166,7 +182,7 @@ class Grid:
         neighbouring_coordinates = self._get_neighbouring_nodes_coordinates(coordinates)
         valid_neighbours = []
         for coordinate_pair in neighbouring_coordinates:
-            if self._are_valid_coordinates(coordinate_pair) and self._are_coordinates_empty(coordinate_pair):
+            if self._are_coordinates_empty(coordinate_pair):
                 valid_neighbours.append(coordinate_pair)
         return valid_neighbours
 
@@ -243,14 +259,44 @@ class Grid:
     def _get_drawing_coordinates_from_grid(self, grid_coordinates):
         x, y = grid_coordinates
         return (self._offset[0]+x*self.NODE_SIZE, self._offset[1]+y*self.NODE_SIZE)
+    
+    def _get_invalid_coordinates_to_add_sparx(self,coordinates,iterations,invalid):
+        if iterations == 0:
+            return
+        coordinates = [c for c in self._get_neighbouring_nodes_coordinates(coordinates) if self._are_coordinates_walkable_line(c)]
+        for c in coordinates:
+            if c in invalid:
+                continue
+                
+            invalid.append(c)
+            self._get_invalid_coordinates_to_add_sparx(c,iterations - 1,invalid)
+        
+            
 
     def _draw_objects(self,window):
         self._draw_spiders(window)
         self._draw_qix(window)
         self._draw_player(window)
-
+    
+    def _add_sparx(self):
+        player_position = self.player.get_position()
+        invalid_coordinates = [player_position]
+        self._get_invalid_coordinates_to_add_sparx(player_position,5,invalid_coordinates)
+        valid_coordinates = player_position
+        
+        while valid_coordinates in invalid_coordinates:
+            valid_coordinates = self.border[random.randint(0,len(self.border)-1)]
+        
+        adjacent = [c for c in self._get_neighbouring_nodes_coordinates(valid_coordinates) if self._are_coordinates_walkable_line(c)]
+        self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[0]))
+        self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[1]))
+    
     def _draw_spiders(self, window):
-        pass
+        for sparx in self.sparxs:
+            sparx_position = sparx.get_position()
+            drawing_coordinates = self._get_drawing_coordinates_from_grid(sparx_position)
+            sparx.draw(window, drawing_coordinates)
+        
 
     def _draw_qix(self, window):
         qix_position = self.qix.get_position()
