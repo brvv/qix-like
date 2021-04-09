@@ -21,9 +21,6 @@ class Player:
         
     def died(self):
         self.lives -= 1
-        if self.lives <= 0:
-            return False
-        return True
     
     def get_score(self):
         return self.score

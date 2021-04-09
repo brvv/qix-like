@@ -13,6 +13,8 @@ import random
 class Grid:
     NODE_SIZE = GridConfig.NODE_SIZE.value
     SPARX_MOVE_FACTOR = 3
+    FUSE_GRACE_PERIOD = 100
+    
     def __init__(self, width, length, drawing_offset=(0,0)):
         self._offset = drawing_offset
         self.grid = self._init_grid(width, length)
@@ -33,13 +35,15 @@ class Grid:
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
         self._drawn_line = []
         
+        self._fuse_grace = self.FUSE_GRACE_PERIOD
+        
     #This function does all the logic
     def update(self):
         self._update_player()
         self._update_sparx()
     
     def _update_player(self):
-        self._check_if_sparx_killed()
+        self._check_if_lost_life()
         if self.player.get_velocity == 0.0:
             return None
         else:
@@ -54,8 +58,8 @@ class Grid:
         if self._sparx_current_move_val != 0:
             self._sparx_current_move_val -= 1
             return
+            
         for sparx in self.sparxs:
-        
             current_position = sparx.get_position()
             possible_next = self._get_neighbouring_nodes_coordinates(current_position)
             self._update_node(current_position)
@@ -63,12 +67,44 @@ class Grid:
             if sparx.moved_in_dropped_state([c for c in possible_next if self._are_coordinates_dropped(c)]):
                 continue
                 
-            sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])
-            
+            sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])        
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
+        
     
+    def _check_if_lost_life(self):
+        if self._check_if_sparx_killed() or self._fuse():
+            self.player.died()
+        if self.player.get_lives() <= 0:
+            self._died()
+        else:
+            self._reset_after_lost_life()
+               
+        
     def _died(self):
-        print("died")
+        pass
+        
+    def _reset_after_lost_life(self):
+        pass
+    
+    
+    def _fuse(self):
+        if not self._is_drawing_mode_on():
+            self._fuse_grace = self.FUSE_GRACE_PERIOD
+            return False
+        
+        if self.player.get_velocity() != 0.0:
+            return False
+
+        if self._fuse_grace != 0:
+            self._fuse_grace -= 1
+            return False
+            
+        for coordinates in self._drawn_line:
+            if not self._are_coordinates_on_fuse(coordinates) and not self._are_coordinates_walkable_line(coordinates):
+                if self.player.get_position() == coordinates:
+                    return True
+                self._fill_node_from_coordinates(coordinates, State.FUSE_LINE)
+                return False    
         
         
     def _check_sparx_path(self,dropped):
@@ -80,8 +116,8 @@ class Grid:
         player_position = self.player.get_position()
         for sparx in self.sparxs:
             if sparx.get_position() == player_position:
-                if self.player.died():
-                    self._died()
+                return True
+        return False
                     
     
     def _update_node(self, coordinates):
@@ -269,6 +305,9 @@ class Grid:
         is_y_valid = 0 <= coordinates[1] <= self.grid_size[1] - 1
         return is_x_valid and is_y_valid 
 
+    def _are_coordinates_on_fuse(self,coordinates):
+        return (self._get_node(coordinates).get_state() == State.FUSE_LINE)
+        
     def _are_coordinates_walkable(self, coordinates):
         return  self._are_coordinates_walkable_line(coordinates) or (self._is_drawing_mode_on() and self._are_coordinates_drawable(coordinates))
 
