@@ -9,16 +9,19 @@ class Game:
     FPS = WindowConfig.FPS.value
 
     def __init__(self):
+        pygame.init()
         pygame.display.set_caption("QIX")
         self.grid = Grid(GridConfig.GRID_WIDTH.value, GridConfig.GRID_LENGTH.value)
-        self.WIN.fill((255,255,255))
+        self.WIN.fill((128,128,128))
 
     def update(self):
+        self.WIN.fill((128,128,128))
         self.grid.update()
 
     def draw(self):
         self.grid.draw(self.WIN)
         pygame.display.update()
+        
 
 
 
@@ -62,7 +65,7 @@ class Game:
 
                 if event.type == pygame.KEYUP:
                     self.handle_key_up(event.key)
-
+            
             self.update()
             self.draw()
         pygame.quit()

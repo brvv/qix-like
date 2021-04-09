@@ -12,7 +12,7 @@ import random
 
 class Grid:
     NODE_SIZE = GridConfig.NODE_SIZE.value
-    SPARX_MOVE_FACTOR = 4
+    SPARX_MOVE_FACTOR = 3
     def __init__(self, width, length, drawing_offset=(0,0)):
         self._offset = drawing_offset
         self.grid = self._init_grid(width, length)
@@ -27,7 +27,9 @@ class Grid:
         self.qix = Qix((self.NODE_SIZE,self.NODE_SIZE))
         self.sparxs = []
         self._add_sparx()
-       
+        
+        self.claimed = 0
+        self.claim_target = 65
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
         self._drawn_line = []
         
@@ -37,6 +39,7 @@ class Grid:
         self._update_sparx()
     
     def _update_player(self):
+        self._check_if_sparx_killed()
         if self.player.get_velocity == 0.0:
             return None
         else:
@@ -63,12 +66,23 @@ class Grid:
             sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])
             
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
+    
+    def _died(self):
+        print("died")
+        
         
     def _check_sparx_path(self,dropped):
         for sparx in self.sparxs:
             if sparx.get_position() in dropped:
                 sparx.in_dropped_state(dropped.copy())
-        
+    
+    def _check_if_sparx_killed(self):
+        player_position = self.player.get_position()
+        for sparx in self.sparxs:
+            if sparx.get_position() == player_position:
+                if self.player.died():
+                    self._died()
+                    
     
     def _update_node(self, coordinates):
         self._get_node(coordinates).update_node()
@@ -84,7 +98,30 @@ class Grid:
     def draw(self, window):
         self._draw_grid(window)
         self._draw_objects(window)
-
+        self._draw_stats(window)
+        
+    def _draw_stats(self,window):
+        self._write_text(window,0,window.get_height(),self._apply_bottom_left,"Lives:{}".format(self.player.get_lives()))
+        self._write_text(window,window.get_width(),window.get_height(),self._apply_bottom_right,"Score:{}".format(self.player.get_score()))
+        self._write_text(window,window.get_width()/2,window.get_height(),self._apply_bottom,"Claimed: {}%   Target:{}%".format(self.claimed,self.claim_target))
+    
+    def _write_text(self,window,x_pos,y_pos,apply,txt):
+        font = pygame.font.Font('freesansbold.ttf',32)
+        text = font.render(txt,True,(0,0,0))
+        textRect = text.get_rect()
+        apply(textRect,x_pos,y_pos)
+        window.blit(text,textRect)
+    
+    def _apply_bottom(self,textRect,x_pos,y_pos):
+        textRect.midbottom = (x_pos,y_pos)
+        
+    
+    def _apply_bottom_right(self,textRect,x_pos,y_pos):
+        textRect.bottomright = (x_pos,y_pos)
+    
+    def _apply_bottom_left(self,textRect,x_pos,y_pos):
+        textRect.bottomleft = (x_pos,y_pos)
+        
     def move_player(self, direction):
         if (self._is_drawing_mode_on()):
             

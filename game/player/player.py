@@ -8,12 +8,30 @@ class Player:
         self._draw_size = draw_size;
         self.image = pygame.transform.scale(self.PLAYER_SPRITE, self._draw_size)
         #[x,y]
+        self.lives = 3
+        self.score = 0
         self.position = [0,0]
         self.is_drawing = False
         self._velocity = 0
         self._movement_counter = 0.0
         self._movement_direction = None
 
+    def get_lives(self):
+        return self.lives
+        
+    def died(self):
+        self.lives -= 1
+        if self.lives <= 0:
+            return False
+        return True
+    
+    def get_score(self):
+        return self.score
+    
+    def increase_score(self,fact = 1):
+        self.get_score += 150 * fact
+    
+    
     def draw(self, window, coord):
         window.blit(self.image, coord)
 

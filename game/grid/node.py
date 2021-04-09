@@ -12,8 +12,9 @@ class Node:
         if color == None:
             color = self.color
         if self._is_updated:
-            pygame.draw.rect(window, color, self.rect)
+        #    pygame.draw.rect(window, color, self.rect)
             self._is_updated = False
+        pygame.draw.rect(window, color, self.rect)
 
     def set_color(self, new_color):
         self.color = new_color

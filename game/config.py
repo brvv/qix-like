@@ -3,7 +3,7 @@ import pygame
 
 class WindowConfig(Enum):
     WIDTH = 1616 //2
-    HEIGHT = 1616 //2 
+    HEIGHT = 1816 //2 
     FPS = 60
 
 class GridConfig(Enum):
