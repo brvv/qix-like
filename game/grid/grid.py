@@ -12,7 +12,7 @@ import random
 
 class Grid:
     NODE_SIZE = GridConfig.NODE_SIZE.value
-
+    SPARX_MOVE_FACTOR = 4
     def __init__(self, width, length, drawing_offset=(0,0)):
         self._offset = drawing_offset
         self.grid = self._init_grid(width, length)
@@ -27,7 +27,8 @@ class Grid:
         self.qix = Qix((self.NODE_SIZE,self.NODE_SIZE))
         self.sparxs = []
         self._add_sparx()
-        
+       
+        self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
         self._drawn_line = []
         
     #This function does all the logic
@@ -47,12 +48,28 @@ class Grid:
                 self.move_player(direction)
                 
     def _update_sparx(self):
+        if self._sparx_current_move_val != 0:
+            self._sparx_current_move_val -= 1
+            return
         for sparx in self.sparxs:
+        
             current_position = sparx.get_position()
-            possible_next = [c for c in self._get_neighbouring_nodes_coordinates(current_position) if self._are_coordinates_walkable_line(c)]
+            possible_next = self._get_neighbouring_nodes_coordinates(current_position)
             self._update_node(current_position)
-            sparx.set_position(possible_next)
             
+            if sparx.moved_in_dropped_state([c for c in possible_next if self._are_coordinates_dropped(c)]):
+                continue
+                
+            sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])
+            
+        self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
+        
+    def _check_sparx_path(self,dropped):
+        for sparx in self.sparxs:
+            if sparx.get_position() in dropped:
+                sparx.in_dropped_state(dropped.copy())
+        
+    
     def _update_node(self, coordinates):
         self._get_node(coordinates).update_node()
     
@@ -201,10 +218,13 @@ class Grid:
             self.border.append(coordinates)
     
     def _drop_old_walkable_coordinates(self):
+        dropped_walkable = []
         for walkable_node in self.border:
             neighbours = self._get_extended_neighbouring_nodes_coordinates(walkable_node)
             if not any(self._are_coordinates_empty(item) for item in neighbours):
+                dropped_walkable.append(walkable_node)
                 self._fill_node_from_coordinates(walkable_node,State.DROPPED_WALKABLE_LINE)
+        self._check_sparx_path(dropped_walkable)
         
     
     def _are_valid_coordinates(self, coordinates):
@@ -220,6 +240,9 @@ class Grid:
 
     def _are_coordinates_drawable(self, coordinates):
         return self._are_coordinates_empty(coordinates)
+    
+    def _are_coordinates_dropped(self, coordinates):
+        return self._get_node(coordinates).get_state() == State.DROPPED_WALKABLE_LINE
     
     def _are_coordinates_empty(self, coordinates):
         return self._get_node(coordinates).get_state() == State.EMPTY

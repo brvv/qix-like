@@ -63,8 +63,8 @@ class Game:
                 if event.type == pygame.KEYUP:
                     self.handle_key_up(event.key)
 
-                self.update()
-                self.draw()
+            self.update()
+            self.draw()
         pygame.quit()
 
     def start_game(self):
