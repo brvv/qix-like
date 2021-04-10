@@ -32,18 +32,22 @@ class Grid:
         
         self.claimed = 0
         self.claim_target = 65
+        self.node_percentage = 100 / (self._width*self._length)
+        
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
         self._drawn_line = []
         
         self._fuse_grace = self.FUSE_GRACE_PERIOD
         
     #This function does all the logic
-    def update(self):
+    def update(self):        
         self._update_player()
         self._update_sparx()
     
     def _update_player(self):
-        self._check_if_lost_life()
+        if self._check_if_lost_life():
+            return None
+            
         if self.player.get_velocity == 0.0:
             return None
         else:
@@ -70,21 +74,34 @@ class Grid:
             sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])        
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
         
+    # fix
+    def _add_to_claim(self,lst):
+        self.claimed += self.node_percentage * len(set( [(c[0],c[1]) for c in lst] ))
     
     def _check_if_lost_life(self):
-        if self._check_if_sparx_killed() or self._fuse():
-            self.player.died()
+        if not (self._check_if_sparx_killed() or self._fuse()):
+            return False
+            
+        self.player.died()
         if self.player.get_lives() <= 0:
             self._died()
         else:
             self._reset_after_lost_life()
-               
+        return True
         
     def _died(self):
+        
         pass
         
     def _reset_after_lost_life(self):
-        pass
+        player_position = self.player.get_position()
+        if not self._are_coordinates_walkable_line(player_position):
+            self.player.set_position(self._drawn_line[0])
+            self._fill_nodes_from_coordinates_list(self._drawn_line[1:],State.EMPTY)
+            self._drawn_line = []
+        self.sparxs = []
+        self._add_sparx()
+        
     
     
     def _fuse(self):
@@ -104,7 +121,8 @@ class Grid:
                 if self.player.get_position() == coordinates:
                     return True
                 self._fill_node_from_coordinates(coordinates, State.FUSE_LINE)
-                return False    
+                break
+        return False    
         
         
     def _check_sparx_path(self,dropped):
@@ -116,6 +134,7 @@ class Grid:
         player_position = self.player.get_position()
         for sparx in self.sparxs:
             if sparx.get_position() == player_position:
+                self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
                 return True
         return False
                     
@@ -139,7 +158,7 @@ class Grid:
     def _draw_stats(self,window):
         self._write_text(window,0,window.get_height(),self._apply_bottom_left,"Lives:{}".format(self.player.get_lives()))
         self._write_text(window,window.get_width(),window.get_height(),self._apply_bottom_right,"Score:{}".format(self.player.get_score()))
-        self._write_text(window,window.get_width()/2,window.get_height(),self._apply_bottom,"Claimed: {}%   Target:{}%".format(self.claimed,self.claim_target))
+        self._write_text(window,window.get_width()/2,window.get_height(),self._apply_bottom,"Claimed: {}%   Target:{}%".format(int(self.claimed),self.claim_target))
     
     def _write_text(self,window,x_pos,y_pos,apply,txt):
         font = pygame.font.Font('freesansbold.ttf',32)
@@ -151,7 +170,6 @@ class Grid:
     def _apply_bottom(self,textRect,x_pos,y_pos):
         textRect.midbottom = (x_pos,y_pos)
         
-    
     def _apply_bottom_right(self,textRect,x_pos,y_pos):
         textRect.bottomright = (x_pos,y_pos)
     
@@ -210,10 +228,13 @@ class Grid:
                 if len(self._drawn_line) > 0:
                     self._fill_area_opposite_to_qix(coordinates)
                     self._fill_drawn_line()
+    
+    
 
     def _fill_area_opposite_to_qix(self, new_coordinates):
         flood_fill_start_coordinates = self._find_flood_fill_start_coordinates(new_coordinates)
         flood_fill_queue = self._get_flood_fill_queue_opposite_to_qix(flood_fill_start_coordinates)
+        self._add_to_claim(flood_fill_queue)
         self._fill_nodes_from_coordinates_list(flood_fill_queue, State.RED_FILL)
 
     def _find_flood_fill_start_coordinates(self, new_coordinates):
@@ -297,6 +318,8 @@ class Grid:
             if not any(self._are_coordinates_empty(item) for item in neighbours):
                 dropped_walkable.append(walkable_node)
                 self._fill_node_from_coordinates(walkable_node,State.DROPPED_WALKABLE_LINE)
+                
+        self._add_to_claim(dropped_walkable)
         self._check_sparx_path(dropped_walkable)
         
     
@@ -378,9 +401,10 @@ class Grid:
         self._draw_player(window)
     
     def _add_sparx(self):
+        sparx_spawn_offset = 10
         player_position = self.player.get_position()
         invalid_coordinates = [player_position]
-        self._get_invalid_coordinates_to_add_sparx(player_position,5,invalid_coordinates)
+        self._get_invalid_coordinates_to_add_sparx(player_position,sparx_spawn_offset,invalid_coordinates)
         valid_coordinates = player_position
         
         while valid_coordinates in invalid_coordinates:
