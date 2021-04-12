@@ -47,6 +47,10 @@ class Grid:
         self._update_sparx()
         self._update_qix()
     
+    def _add_spritz(self):
+        pass
+    
+    
     def _update_qix(self):
         if self.qix.get_steps() == 0:
             self._qix_set_next_movement_direction()
@@ -105,8 +109,9 @@ class Grid:
 
     def _qix_set_next_movement_direction(self):
         direction = (random.randint(-1,1),random.randint(-1,1))
-        steps = random.randint(5,10)
-        self.qix.set_move_direction(direction,steps)        
+        steps = random.randint(5,15)
+        self.qix.set_move_direction(direction,steps) 
+        
     # fix
     def _add_to_claim(self,lst):
         self.claimed += self.node_percentage * len(set( [(c[0],c[1]) for c in lst] ))
@@ -114,7 +119,8 @@ class Grid:
     def _check_if_lost_life(self):
         if not (self._check_if_sparx_killed() or self._fuse() or self._check_if_qix_killed()):
             return False
-            
+        
+        self.deactivate_drawing_mode()
         self.player.died()
         if self.player.get_lives() <= 0:
             self._died()
@@ -133,9 +139,7 @@ class Grid:
             self._drawn_line = []
         self.sparxs = []
         self._add_sparx()
-        
-    
-    
+
     def _fuse(self):
         if not self._is_drawing_mode_on():
             self._fuse_grace = self.FUSE_GRACE_PERIOD
@@ -445,6 +449,7 @@ class Grid:
         self._draw_spiders(window)
         self._draw_player(window)
     
+    #DEBUG
     def _add_sparx(self):
         sparx_spawn_offset = 10
         player_position = self.player.get_position()
@@ -454,8 +459,10 @@ class Grid:
         
         while valid_coordinates in invalid_coordinates:
             valid_coordinates = self.border[random.randint(0,len(self.border)-1)]
+            #print(valid_coordinates)
         
         adjacent = [c for c in self._get_neighbouring_nodes_coordinates(valid_coordinates) if self._are_coordinates_walkable_line(c)]
+        #print(adjacent)
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[0]))
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[1]))
     
