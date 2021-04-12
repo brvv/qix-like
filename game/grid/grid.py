@@ -26,7 +26,9 @@ class Grid:
         self._fill_border()
         
         self.player = Player((self.NODE_SIZE,self.NODE_SIZE))
-        self.qix = Qix((self.NODE_SIZE,self.NODE_SIZE))
+        self.qix = Qix()
+        self._set_qix_area()
+        
         self.sparxs = []
         self._add_sparx()
         
@@ -43,7 +45,34 @@ class Grid:
     def update(self):        
         self._update_player()
         self._update_sparx()
+        self._update_qix()
     
+    def _update_qix(self):
+        if self.qix.get_steps() == 0:
+            self._qix_set_next_movement_direction()
+        
+        while not self._check_next_qix_posistion():
+            self._qix_set_next_movement_direction()
+        
+        qix_direction = self.qix.get_move_direction()
+        next_position = self._get_next_move_coordinates(qix_direction,self.qix.get_position())
+        
+        self.qix.reduce_steps()
+        self.qix.set_position(next_position)
+        self._set_qix_area()
+        
+
+    def _check_next_qix_posistion(self):
+        qix_direction = self.qix.get_move_direction()
+        qix_coordinates = self.qix.get_full_coordinates()
+        for coordinate in qix_coordinates:
+            new_coordinates = self._get_next_move_coordinates(qix_direction,coordinate)
+            if not (self._are_valid_coordinates(new_coordinates) and (self._are_coordinates_empty(new_coordinates) 
+                    or new_coordinates in qix_coordinates or new_coordinates in self._drawn_line)):
+                return False
+        return True
+
+        
     def _update_player(self):
         if self._check_if_lost_life():
             return None
@@ -73,13 +102,17 @@ class Grid:
                 
             sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])        
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
-        
+
+    def _qix_set_next_movement_direction(self):
+        direction = (random.randint(-1,1),random.randint(-1,1))
+        steps = random.randint(5,10)
+        self.qix.set_move_direction(direction,steps)        
     # fix
     def _add_to_claim(self,lst):
         self.claimed += self.node_percentage * len(set( [(c[0],c[1]) for c in lst] ))
     
     def _check_if_lost_life(self):
-        if not (self._check_if_sparx_killed() or self._fuse()):
+        if not (self._check_if_sparx_killed() or self._fuse() or self._check_if_qix_killed()):
             return False
             
         self.player.died()
@@ -90,7 +123,6 @@ class Grid:
         return True
         
     def _died(self):
-        
         pass
         
     def _reset_after_lost_life(self):
@@ -123,7 +155,14 @@ class Grid:
                 self._fill_node_from_coordinates(coordinates, State.FUSE_LINE)
                 break
         return False    
-        
+    
+    def _check_if_qix_killed(self):
+        qix_coordinates = self.qix.get_full_coordinates()
+        if self.player.get_position() in qix_coordinates:
+            return True
+        if any(coordinate in self._drawn_line for coordinate in qix_coordinates):
+            return True
+        return False
         
     def _check_sparx_path(self,dropped):
         for sparx in self.sparxs:
@@ -137,8 +176,8 @@ class Grid:
                 self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
                 return True
         return False
-                    
-    
+              
+              
     def _update_node(self, coordinates):
         self._get_node(coordinates).update_node()
     
@@ -146,6 +185,7 @@ class Grid:
         self.player.start_moving()
         self.player.set_movement_direction(direction)
 
+    #--Check if used --
     def stop_moving_player(self, direction):
         if self.player.get_movement_direction() == direction:
             self.player.stop_moving()
@@ -193,17 +233,23 @@ class Grid:
 
     def _is_drawing_mode_on(self):
         return self.player.is_drawing_mode_on()
-
+    
+    def _get_next_move_coordinates(self, direction, current_coordinates):
+        new_x_1 = current_coordinates[0] + direction[0]
+        new_y_1 = current_coordinates[1] + direction[1]
+        return [new_x_1, new_y_1]
+    
+    def _get_next_move_coordinates_enum(self, direction, current_coordinates):
+        new_x_1 = current_coordinates[0] + direction.value[0]
+        new_y_1 = current_coordinates[1] + direction.value[1]
+        return [new_x_1, new_y_1]
+        
+    #consider moving by one 
     def _move_player_simple(self, direction):
         current_player_position = self.player.get_position()
-        new_x_1 = current_player_position[0] + direction.value[0]
-        new_y_1 = current_player_position[1] + direction.value[1]
-        new_x_2 = new_x_1 + direction.value[0]
-        new_y_2 = new_y_1 + direction.value[1]
-
-        coordinates1 = [new_x_1, new_y_1]
-        coordinates2 = [new_x_2, new_y_2]
-
+        coordinates1 = self._get_next_move_coordinates_enum(direction,current_player_position)
+        coordinates2 = self._get_next_move_coordinates_enum(direction,coordinates1)
+        
         if self._are_valid_coordinates(coordinates1) and self._are_valid_coordinates(coordinates2):
             if  self._are_coordinates_walkable(coordinates1) and self._are_coordinates_walkable(coordinates2):
                 self.player.set_position(coordinates2)
@@ -257,7 +303,6 @@ class Grid:
         queue = []
         queue.append(coordinates)
         qix_coordinates = self.qix.get_position()
-
         fill_queue = []
         visited_matrix = [[0 for ii in range(self._length)] for i in range(self._width)]
 
@@ -291,9 +336,10 @@ class Grid:
     
     def _get_empty_neighbouring_nodes_coordinates(self, coordinates):
         neighbouring_coordinates = self._get_neighbouring_nodes_coordinates(coordinates)
+        qix_coordinates = self.qix.get_full_coordinates()
         valid_neighbours = []
         for coordinate_pair in neighbouring_coordinates:
-            if self._are_coordinates_empty(coordinate_pair):
+            if self._are_coordinates_empty(coordinate_pair) or coordinate_pair in qix_coordinates:
                 valid_neighbours.append(coordinate_pair)
         return valid_neighbours
 
@@ -338,7 +384,7 @@ class Grid:
         return (self._get_node(coordinates).get_state() == State.WALKABLE_LINE)
 
     def _are_coordinates_drawable(self, coordinates):
-        return self._are_coordinates_empty(coordinates)
+        return self._are_coordinates_empty(coordinates) or coordinates in self.qix.get_full_coordinates()
     
     def _are_coordinates_dropped(self, coordinates):
         return self._get_node(coordinates).get_state() == State.DROPPED_WALKABLE_LINE
@@ -397,7 +443,6 @@ class Grid:
 
     def _draw_objects(self,window):
         self._draw_spiders(window)
-        self._draw_qix(window)
         self._draw_player(window)
     
     def _add_sparx(self):
@@ -420,12 +465,22 @@ class Grid:
             drawing_coordinates = self._get_drawing_coordinates_from_grid(sparx_position)
             sparx.draw(window, drawing_coordinates)
         
-
-    def _draw_qix(self, window):
+    def _find_qix_nodes(self,coordinate,lst,iterations):
+        if iterations == 0 or coordinate in lst:
+            return
+        lst.append(coordinate)
+        for element in self._get_neighbouring_nodes_coordinates(coordinate):
+            self._find_qix_nodes(element,lst,iterations - 1)
+        
+    
+    def _set_qix_area(self):
         qix_position = self.qix.get_position()
-        drawing_coordinates = self._get_drawing_coordinates_from_grid(qix_position)
-        self.qix.draw(window, drawing_coordinates)
-
+        lst = []
+        self._find_qix_nodes(qix_position,lst,5)
+        self._fill_nodes_from_coordinates_list(self.qix.get_full_coordinates(),State.EMPTY)
+        self.qix.set_full_coordinates(lst)
+        self._fill_nodes_from_coordinates_list(lst,State.QIX)
+    
     def _draw_player(self, window):
         player_position = self.player.get_position()
         drawing_coordinates = self._get_drawing_coordinates_from_grid(player_position)

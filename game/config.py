@@ -22,5 +22,6 @@ class QixConfig(Enum):
     QIX_START_COORDINATES = [GridConfig.GRID_WIDTH.value//2, GridConfig.GRID_LENGTH.value//2]
     #QIX_SPRITE = pygame.image.load('game/qix/')
     
+    
 class SparxConfig(Enum):
     SPARX_SPRITE =pygame.image.load('game/sparx/darl.png')

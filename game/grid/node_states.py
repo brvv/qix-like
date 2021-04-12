@@ -1,4 +1,5 @@
 from enum import Enum
+from random import randint
 
 class State(Enum):
     EMPTY = (0,0,0)
@@ -9,4 +10,5 @@ class State(Enum):
     RED_FILL = (255,0,0)
     GREEN_FILL = (0,255,0)
     BLUE_FILL = (0,0,255)
+    QIX = (152,51,255)
     
