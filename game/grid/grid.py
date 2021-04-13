@@ -345,11 +345,25 @@ class Grid:
 
             elif self._are_coordinates_walkable(coordinates):
                 self.deactivate_drawing_mode()
-                if len(self._drawn_line) > 0:
+                if self._is_drawn_line_valid(coordinates):
                     self._fill_area_opposite_to_qix(coordinates)
                     self._fill_drawn_line()
+                else:
+                    self._drawn_line = []
     
-    
+    def _is_drawn_line_valid(self, end_coordinates):
+        if len(self._drawn_line) >= 3:
+            is_start_valid = self._are_coordinates_walkable(self._drawn_line[0])
+            is_end_valid = self._are_coordinates_walkable(end_coordinates)
+            is_middle_valid = not self._is_coordinate_list_walkable(self._drawn_line[1:-1])
+            return is_start_valid and is_middle_valid and is_end_valid
+        return False
+
+    def _is_coordinate_list_walkable(self, lst):
+        for coordinate in lst:
+            if not self._are_coordinates_walkable(coordinate):
+                return False
+        return True
 
     def _fill_area_opposite_to_qix(self, new_coordinates):
         flood_fill_start_coordinates = self._find_flood_fill_start_coordinates(new_coordinates)
