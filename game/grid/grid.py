@@ -69,7 +69,8 @@ class Grid:
             if any(self._are_coordinates_walkable_line([c[0],c[1]+direction[1]]) for c in spritz.get_full_coordinates()):
                 spritz.flip_y_direction()
             if not self._check_next_qix_or_spritz_position(spritz):
-                continue
+                spritz.flip_x_direction()
+                spritz.flip_y_direction()
             
             next_position = self._get_next_move_coordinates(direction,spritz.get_position())
             spritz.set_position(next_position)
