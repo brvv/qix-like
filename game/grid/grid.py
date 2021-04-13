@@ -240,8 +240,9 @@ class Grid:
     
     def _check_if_sparx_killed(self):
         player_position = self.player.get_position()
+        hitbox_coordinates = self._get_neighbouring_nodes_coordinates(player_position)
         for sparx in self.sparxs:
-            if sparx.get_position() == player_position:
+            if sparx.get_position() in hitbox_coordinates:
                 self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
                 return True
         return False
