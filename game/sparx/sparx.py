@@ -37,12 +37,24 @@ class Sparx:
         if not self.set_position([c for c in coordinates if c in self.dropped_coordinates]):
             self.dropped = False
             self.dropped_coordinates = []
-            return False
-        
+            return False    
         return True
         
         
     def set_position(self, coordinates):
+        x_straight = [item for item in coordinates if item[0] == self.previous[0] == self.position[0] and item != self.previous]
+        y_straight = [item for item in coordinates if item[1] == self.previous[1] == self.position[1] and item != self.previous]
+        
+        if x_straight != []:
+            self.previous = self.position
+            self.position = x_straight[0]
+            return True
+        
+        if y_straight != []:
+            self.previous = self.position
+            self.position = y_straight[0]
+            return True
+        
         for c in coordinates:
             if c == self.previous:
                 continue

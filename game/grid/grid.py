@@ -68,6 +68,8 @@ class Grid:
                 spritz.flip_x_direction()
             if any(self._are_coordinates_walkable_line([c[0],c[1]+direction[1]]) for c in spritz.get_full_coordinates()):
                 spritz.flip_y_direction()
+            if not self._check_next_qix_or_spritz_position(spritz):
+                continue
             
             next_position = self._get_next_move_coordinates(direction,spritz.get_position())
             spritz.set_position(next_position)
@@ -77,7 +79,7 @@ class Grid:
         if self.qix.get_steps() == 0:
             self._qix_set_next_movement_direction()
         
-        while not self._check_next_qix_position():
+        while not self._check_next_qix_or_spritz_position(self.qix):
             self._qix_set_next_movement_direction()
         
         qix_direction = self.qix.get_move_direction()
@@ -87,9 +89,9 @@ class Grid:
         self.qix.set_position(next_position)
         self._set_qix_area()
         
-    def _check_next_qix_position(self):
-        direction = self.qix.get_move_direction()
-        coordinates = self.qix.get_full_coordinates()
+    def _check_next_qix_or_spritz_position(self,obj):
+        direction = obj.get_move_direction()
+        coordinates = obj.get_full_coordinates()
         for coordinate in coordinates:
             new_coordinates = self._get_next_move_coordinates(direction,coordinate)
             
