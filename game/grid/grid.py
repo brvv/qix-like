@@ -4,7 +4,7 @@ from .node_states import State
 from ..player.player import Player
 from ..qix.qix import Qix
 from ..sparx.sparx import Sparx
-from ..config import GridConfig
+from ..config import GridConfig, PlayerConfig
 from ..spritz.spritz import Spritz
 
 
@@ -14,6 +14,7 @@ class Grid:
     NODE_SIZE = GridConfig.NODE_SIZE.value
     SPARX_MOVE_FACTOR = 3
     FUSE_GRACE_PERIOD = 100
+
     
     def __init__(self, width, length, window, drawing_offset=(0,0)):
         self.window = window
@@ -26,7 +27,7 @@ class Grid:
         self.border = []
         self._fill_border()
         
-        self.player = Player((self.NODE_SIZE,self.NODE_SIZE))
+        self.player = Player((self.NODE_SIZE*PlayerConfig.PLAYER_SPRITE_SCALE.value,self.NODE_SIZE*PlayerConfig.PLAYER_SPRITE_SCALE.value))
         self.qix = Qix()
         self._set_qix_area()
         

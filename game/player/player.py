@@ -30,7 +30,7 @@ class Player:
     
     
     def draw(self, window, coord):
-        window.blit(self.image, coord)
+        window.blit(self.image, (coord[0] - self.image.get_width()//2, coord[1] - self.image.get_height()//2))
 
     def get_velocity(self):
         return self._velocity
