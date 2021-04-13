@@ -64,6 +64,11 @@ class Grid:
 
         for spritz in self.spritz:
             direction = spritz.get_move_direction()
+            if any(self._are_coordinates_claimed([c[0]+direction[0],c[1]]) or self._are_coordinates_claimed([c[0],c[1]+direction[1]]) for c in spritz.get_full_coordinates()):
+                self._fill_nodes_from_coordinates_list(spritz.get_full_coordinates(), State.RED_FILL)
+                self.spritz.remove(spritz)
+                continue
+            
             if any(self._are_coordinates_walkable_line([c[0]+direction[0],c[1]]) for c in spritz.get_full_coordinates()):
                 spritz.flip_x_direction()
             if any(self._are_coordinates_walkable_line([c[0],c[1]+direction[1]]) for c in spritz.get_full_coordinates()):
@@ -517,6 +522,9 @@ class Grid:
     def _are_coordinates_walkable_line(self, coordinates):
         return (self._get_node(coordinates).get_state() == State.WALKABLE_LINE)
 
+    def _are_coordinates_claimed(self,coordinates):
+        return self._get_node(coordinates).get_state() == State.RED_FILL
+        
     def _are_coordinates_drawable(self, coordinates):
         return self._are_coordinates_empty(coordinates) or coordinates in self.qix.get_full_coordinates()
     
