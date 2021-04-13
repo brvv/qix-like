@@ -598,7 +598,9 @@ class Grid:
         while valid_coordinates in invalid_coordinates or not self._are_coordinates_walkable_line(valid_coordinates):
             valid_coordinates = random.choice(self.border)
         
+    
         adjacent = [c for c in self._get_neighbouring_nodes_coordinates(valid_coordinates) if self._are_coordinates_walkable_line(c)]
+        random.shuffle(adjacent)
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[0]))
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[1]))
     
