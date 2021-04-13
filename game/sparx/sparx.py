@@ -58,7 +58,7 @@ class Sparx:
         for c in coordinates:
             if c == self.previous:
                 continue
-            if c in self.dropped_coordinates:
+            if c in self.dropped_coordinates and len(coordinates) > 2:
                 self.dropped_coordinates.remove(c)
                 
             self.previous = self.position

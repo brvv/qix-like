@@ -273,7 +273,7 @@ class Grid:
         
     def _check_sparx_path(self,dropped):
         for sparx in self.sparxs:
-            if sparx.get_position() in dropped:
+            if sparx.get_position() in dropped or sparx.is_sparx_in_dropped():
                 sparx.in_dropped_state(dropped.copy())
     
     def _check_if_sparx_killed(self):
