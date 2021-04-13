@@ -11,7 +11,7 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("QIX")
-        self.grid = Grid(GridConfig.GRID_WIDTH.value, GridConfig.GRID_LENGTH.value)
+        self.grid = Grid(GridConfig.GRID_WIDTH.value, GridConfig.GRID_LENGTH.value,self.WIN)
         self.WIN.fill((128,128,128))
 
     def update(self):

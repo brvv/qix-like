@@ -1,4 +1,4 @@
-import pygame
+import pygame, time
 from random import randint
 from .node import Node
 from .node_states import State
@@ -15,7 +15,8 @@ class Grid:
     SPARX_MOVE_FACTOR = 3
     FUSE_GRACE_PERIOD = 100
     
-    def __init__(self, width, length, drawing_offset=(0,0)):
+    def __init__(self, width, length, window, drawing_offset=(0,0)):
+        self.window = window
         self._offset = drawing_offset
         self.grid = self._init_grid(width, length)
         self._width = width
@@ -127,11 +128,58 @@ class Grid:
         else:
             self._reset_after_lost_life()
         return True
-        
-    def _died(self):
+     
+    def _reset_game(self):
         pass
+    
+    
+    def _died(self):
+        width = self.window.get_width()
+        height = self.window.get_height()
+        notdone = True
         
+        self._write_text(self.window,width/2,height/2,self._apply_center,"Game Over",50)
+        self._write_text(self.window,width/2,height/2 + 50,self._apply_center,"Score: {}".format(self.player.get_score()),50)
+        #notdone = self._button("Play Again",width/2,height/2 + 100,(255,0,0),(127,0,0),self._reset_game)
+        #pygame.display.update()
+        timeout = time.time() + 3
+        pygame.display.update()
+        while time.time() < timeout:
+            continue
+        pygame.quit()
+        
+    
+    def _button(self,msg,x_pos1,y_pos1,act_colour,inact_colour,action):
+        button_width = 100
+        button_height = 50
+        mouse = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()[0]
+        x_pos2 = x_pos1 + button_width
+        y_pos2 = y_pos1 + button_height
+        #print(mouse)
+        #print(mouse_click)
+
+        self._write_text(self.window,(x_pos1+x_pos2)//2,(y_pos1+y_pos2)//2,self._apply_center,msg)
+        if x_pos1 <= mouse[0] <= x_pos2 and y_pos1 <= mouse[1] <= y_pos2:
+            pygame.draw.rect(self.window,act_colour,[x_pos1,y_pos1,button_width,button_height])
+            if mouse_click:
+                action()
+                return False
+        else:
+            pygame.draw.rect(self.window,inact_colour,[x_pos1,y_pos1,button_width,button_height])
+        
+        return True
+    
+    def _lost_life_screen(self):
+        timeout = time.time() + 1
+        self._write_text(self.window,self.window.get_width()/2,self.window.get_height()/2,self._apply_center,"Died",40,(255,255,0))
+        pygame.display.update()
+        while time.time() < timeout:
+            continue
+
+    
     def _reset_after_lost_life(self):
+        self._lost_life_screen()  
         player_position = self.player.get_position()
         if not self._are_coordinates_walkable_line(player_position):
             self.player.set_position(self._drawn_line[0])
@@ -204,12 +252,15 @@ class Grid:
         self._write_text(window,window.get_width(),window.get_height(),self._apply_bottom_right,"Score:{}".format(self.player.get_score()))
         self._write_text(window,window.get_width()/2,window.get_height(),self._apply_bottom,"Claimed: {}%   Target:{}%".format(int(self.claimed),self.claim_target))
     
-    def _write_text(self,window,x_pos,y_pos,apply,txt):
-        font = pygame.font.Font('freesansbold.ttf',32)
-        text = font.render(txt,True,(0,0,0))
+    def _write_text(self,window,x_pos,y_pos,apply,txt,font_size = 32,color = (0,0,0)):
+        font = pygame.font.Font('freesansbold.ttf',font_size)
+        text = font.render(txt,True,color)
         textRect = text.get_rect()
         apply(textRect,x_pos,y_pos)
         window.blit(text,textRect)
+    
+    def _apply_center(self,textRect,x_pos,y_pos):
+        textRect.center = (x_pos,y_pos)
     
     def _apply_bottom(self,textRect,x_pos,y_pos):
         textRect.midbottom = (x_pos,y_pos)
