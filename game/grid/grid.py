@@ -59,9 +59,7 @@ class Grid:
         
     def _update_spritz(self):
         spawn_rate = 1
-        temp = random.randint(1,500)
-        if temp <= spawn_rate:
-            print(temp)
+        if random.randint(1,500) <= spawn_rate:
             self._add_spritz()
 
         for spritz in self.spritz:
