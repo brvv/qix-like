@@ -18,7 +18,7 @@ class PlayerConfig(Enum):
     PLAYER_VELOCITY = 1
 
 class QixConfig(Enum):
-    QIX_SPRITE = pygame.image.load('game/qix/balloon.png')
+    #QIX_SPRITE = pygame.image.load('game/qix/balloon.png')
     QIX_START_COORDINATES = [GridConfig.GRID_WIDTH.value//2, GridConfig.GRID_LENGTH.value//2]
     #QIX_SPRITE = pygame.image.load('game/qix/')
     

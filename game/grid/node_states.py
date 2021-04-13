@@ -11,4 +11,5 @@ class State(Enum):
     GREEN_FILL = (0,255,0)
     BLUE_FILL = (0,0,255)
     QIX = (152,51,255)
+    SPRITZ = (255,255,0)
     

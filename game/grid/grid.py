@@ -1,11 +1,11 @@
-import pygame, time
-from random import randint
+import pygame, time, random
 from .node import Node
 from .node_states import State
 from ..player.player import Player
 from ..qix.qix import Qix
 from ..sparx.sparx import Sparx
 from ..config import GridConfig
+from ..spritz.spritz import Spritz
 
 
 import random
@@ -33,6 +33,8 @@ class Grid:
         self.sparxs = []
         self._add_sparx()
         
+        self.spritz = []
+        
         self.claimed = 0
         self.claim_target = 65
         self.node_percentage = 100 / (self._width*self._length)
@@ -47,37 +49,61 @@ class Grid:
         self._update_player()
         self._update_sparx()
         self._update_qix()
+        self._update_spritz()
+            
     
     def _add_spritz(self):
-        pass
-    
+        start_pos = self.qix.get_position()
+        direction = [random.choice([-1,1]),random.choice([-1,1])]
+        self.spritz.append(Spritz(start_pos,direction))
+        
+    def _update_spritz(self):
+        spawn_rate = 1
+        temp = random.randint(1,500)
+        if temp <= spawn_rate:
+            print(temp)
+            self._add_spritz()
+
+        for spritz in self.spritz:
+            direction = spritz.get_move_direction()
+            if any(self._are_coordinates_walkable_line([c[0]+direction[0],c[1]]) for c in spritz.get_full_coordinates()):
+                spritz.flip_x_direction()
+            if any(self._are_coordinates_walkable_line([c[0],c[1]+direction[1]]) for c in spritz.get_full_coordinates()):
+                spritz.flip_y_direction()
+            
+            next_position = self._get_next_move_coordinates(direction,spritz.get_position())
+            spritz.set_position(next_position)
+            self._set_spritz_area()
+        
+
     
     def _update_qix(self):
         if self.qix.get_steps() == 0:
             self._qix_set_next_movement_direction()
         
-        while not self._check_next_qix_posistion():
+        while not self._check_next_qix_position():
             self._qix_set_next_movement_direction()
         
         qix_direction = self.qix.get_move_direction()
         next_position = self._get_next_move_coordinates(qix_direction,self.qix.get_position())
-        
+
         self.qix.reduce_steps()
         self.qix.set_position(next_position)
         self._set_qix_area()
         
-
-    def _check_next_qix_posistion(self):
-        qix_direction = self.qix.get_move_direction()
-        qix_coordinates = self.qix.get_full_coordinates()
-        for coordinate in qix_coordinates:
-            new_coordinates = self._get_next_move_coordinates(qix_direction,coordinate)
+    def _check_next_qix_position(self):
+        direction = self.qix.get_move_direction()
+        coordinates = self.qix.get_full_coordinates()
+        for coordinate in coordinates:
+            new_coordinates = self._get_next_move_coordinates(direction,coordinate)
+            
             if not (self._are_valid_coordinates(new_coordinates) and (self._are_coordinates_empty(new_coordinates) 
-                    or new_coordinates in qix_coordinates or new_coordinates in self._drawn_line)):
+                    or self._are_coordinates_on_qix(new_coordinates) or new_coordinates in self._drawn_line
+                    or self._are_coordinates_on_spritz(new_coordinates))):
+                    
                 return False
         return True
-
-        
+    
     def _update_player(self):
         self._win()
         if self._check_if_lost_life():
@@ -114,14 +140,13 @@ class Grid:
         steps = random.randint(5,15)
         self.qix.set_move_direction(direction,steps) 
         
-    # fix
     def _add_to_claim(self,lst):
         number_of_nodes = len(set( [(c[0],c[1]) for c in lst] ))
         self.claimed += self.node_percentage * number_of_nodes
         self.player.increase_score(number_of_nodes)
         
     def _check_if_lost_life(self):
-        if not (self._check_if_sparx_killed() or self._fuse() or self._check_if_qix_killed()):
+        if not (self._check_if_sparx_killed() or self._fuse() or self._check_if_qix_killed() or self._check_if_spritz_killed()):
             return False
         
         self.deactivate_drawing_mode()
@@ -144,8 +169,7 @@ class Grid:
         pygame.display.update()
         self._time_wait(4)
         pygame.quit()
-        
-    
+          
     def _reset_game(self):
         pass
     
@@ -166,8 +190,7 @@ class Grid:
         pygame.display.update()
         self._time_wait(3)
         pygame.quit()
-        
-    
+         
     def _button(self,msg,x_pos1,y_pos1,act_colour,inact_colour,action):
         button_width = 100
         button_height = 50
@@ -193,7 +216,11 @@ class Grid:
         self._write_text(self.window,self.window.get_width()/2,self.window.get_height()/2,self._apply_center,"Died",40,(255,255,0))
         pygame.display.update()
         self._time_wait(1)
-
+ 
+    def _remove_spritz(self):
+        for spritz in self.spritz:
+            self._fill_nodes_from_coordinates_list(spritz.get_full_coordinates(),State.EMPTY)
+        self.spritz = []
     
     def _reset_after_lost_life(self):
         self._lost_life_screen()  
@@ -202,6 +229,7 @@ class Grid:
             self.player.set_position(self._drawn_line[0])
             self._fill_nodes_from_coordinates_list(self._drawn_line[1:],State.EMPTY)
             self._drawn_line = []
+        self._remove_spritz()
         self.sparxs = []
         self._add_sparx()
 
@@ -224,6 +252,15 @@ class Grid:
                 self._fill_node_from_coordinates(coordinates, State.FUSE_LINE)
                 break
         return False    
+    
+    def _check_if_spritz_killed(self):
+        for spritz in self.spritz:
+            spritz_coordinates = spritz.get_full_coordinates()
+            if self.player.get_position() in spritz_coordinates:
+                return True
+            if any(coordinate in self._drawn_line for coordinate in spritz_coordinates):
+                return True
+        return False
     
     def _check_if_qix_killed(self):
         qix_coordinates = self.qix.get_full_coordinates()
@@ -455,7 +492,12 @@ class Grid:
                 
         self._add_to_claim(dropped_walkable)
         self._check_sparx_path(dropped_walkable)
-        
+    
+    def _are_coordinates_on_spritz(self,coordinates):
+        return (self._get_node(coordinates).get_state() == State.SPRITZ)
+      
+    def _are_coordinates_on_qix(self,coordinates):
+        return (self._get_node(coordinates).get_state() == State.QIX)
     
     def _are_valid_coordinates(self, coordinates):
         is_x_valid = 0 <= coordinates[0] <= self.grid_size[0] - 1
@@ -526,9 +568,8 @@ class Grid:
                 
             invalid.append(c)
             self._get_invalid_coordinates_to_add_sparx(c,iterations - 1,invalid)
-        
-            
-
+              
+              
     def _draw_objects(self,window):
         self._draw_spiders(window)
         self._draw_player(window)
@@ -549,27 +590,40 @@ class Grid:
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[0]))
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[1]))
     
+            
     def _draw_spiders(self, window):
         for sparx in self.sparxs:
             sparx_position = sparx.get_position()
             drawing_coordinates = self._get_drawing_coordinates_from_grid(sparx_position)
             sparx.draw(window, drawing_coordinates)
         
-    def _find_qix_nodes(self,coordinate,lst,iterations):
+    def _find_qix_or_spritz_nodes(self,coordinate,lst,iterations):
         if iterations == 0 or coordinate in lst:
             return
         lst.append(coordinate)
         for element in self._get_neighbouring_nodes_coordinates(coordinate):
-            self._find_qix_nodes(element,lst,iterations - 1)
+            self._find_qix_or_spritz_nodes(element,lst,iterations - 1)
         
-    
     def _set_qix_area(self):
         qix_position = self.qix.get_position()
         lst = []
-        self._find_qix_nodes(qix_position,lst,5)
+        self._find_qix_or_spritz_nodes(qix_position,lst,5)
         self._fill_nodes_from_coordinates_list(self.qix.get_full_coordinates(),State.EMPTY)
         self.qix.set_full_coordinates(lst)
         self._fill_nodes_from_coordinates_list(lst,State.QIX)
+        
+    
+    def _set_spritz_area(self):
+        for spritz in self.spritz:
+            position = spritz.get_position()
+            lst = []
+            self._find_qix_or_spritz_nodes(position,lst,2)
+            self._fill_nodes_from_coordinates_list(spritz.get_full_coordinates(),State.EMPTY)
+            spritz.set_full_coordinates(lst)
+            for coordinate in lst:
+                if not self._are_coordinates_on_qix(coordinate):
+                    self._fill_node_from_coordinates(coordinate,State.SPRITZ)
+                        
     
     def _draw_player(self, window):
         player_position = self.player.get_position()
