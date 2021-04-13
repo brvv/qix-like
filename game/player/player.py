@@ -7,7 +7,6 @@ class Player:
     def __init__(self, draw_size):
         self._draw_size = draw_size;
         self.image = pygame.transform.scale(self.PLAYER_SPRITE, self._draw_size)
-        #[x,y]
         self.lives = 3
         self.score = 0
         self.position = [0,0]

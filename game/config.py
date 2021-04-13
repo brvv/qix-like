@@ -7,7 +7,7 @@ class WindowConfig(Enum):
     FPS = 60
 
 class GridConfig(Enum):
-    #BOTH HAVE TO BE AN ODD NUMBER
+    #BOTH WIDTH AND LENGTH HAVE TO BE AN ODD NUMBER
     GRID_WIDTH = 101
     GRID_LENGTH = 101
     NODE_SIZE = WindowConfig.WIDTH.value // GRID_WIDTH
@@ -20,9 +20,7 @@ class PlayerConfig(Enum):
     PLAYER_SPRITE_SCALE = 4
 
 class QixConfig(Enum):
-    #QIX_SPRITE = pygame.image.load('game/qix/balloon.png')
     QIX_START_COORDINATES = [GridConfig.GRID_WIDTH.value//2, GridConfig.GRID_LENGTH.value//2]
-    #QIX_SPRITE = pygame.image.load('game/qix/')
     
     
 class SparxConfig(Enum):

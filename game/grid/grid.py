@@ -297,7 +297,6 @@ class Grid:
         self.player.start_moving()
         self.player.set_movement_direction(direction)
 
-    #--Check if used --
     def stop_moving_player(self, direction):
         if self.player.get_movement_direction() == direction:
             self.player.stop_moving()
@@ -360,7 +359,6 @@ class Grid:
         new_y_1 = current_coordinates[1] + direction.value[1]
         return [new_x_1, new_y_1]
         
-    #consider moving by one 
     def _move_player_simple(self, direction):
         current_player_position = self.player.get_position()
         coordinates1 = self._get_next_move_coordinates_enum(direction,current_player_position)
