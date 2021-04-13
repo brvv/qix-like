@@ -199,8 +199,6 @@ class Grid:
         mouse_click = pygame.mouse.get_pressed()[0]
         x_pos2 = x_pos1 + button_width
         y_pos2 = y_pos1 + button_height
-        #print(mouse)
-        #print(mouse_click)
 
         self._write_text(self.window,(x_pos1+x_pos2)//2,(y_pos1+y_pos2)//2,self._apply_center,msg)
         if x_pos1 <= mouse[0] <= x_pos2 and y_pos1 <= mouse[1] <= y_pos2:
@@ -580,7 +578,7 @@ class Grid:
         self._draw_spiders(window)
         self._draw_player(window)
     
-    #DEBUG
+    
     def _add_sparx(self):
         sparx_spawn_offset = 10
         player_position = self.player.get_position()
@@ -592,7 +590,6 @@ class Grid:
             valid_coordinates = random.choice(self.border)
         
         adjacent = [c for c in self._get_neighbouring_nodes_coordinates(valid_coordinates) if self._are_coordinates_walkable_line(c)]
-        #print(adjacent)
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[0]))
         self.sparxs.append(Sparx((self.NODE_SIZE,self.NODE_SIZE), valid_coordinates,adjacent[1]))
     
