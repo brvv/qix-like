@@ -72,9 +72,7 @@ class Grid:
             next_position = self._get_next_move_coordinates(direction,spritz.get_position())
             spritz.set_position(next_position)
             self._set_spritz_area()
-        
-
-    
+         
     def _update_qix(self):
         if self.qix.get_steps() == 0:
             self._qix_set_next_movement_direction()
@@ -130,7 +128,9 @@ class Grid:
             if sparx.moved_in_dropped_state([c for c in possible_next if self._are_coordinates_dropped(c)]):
                 continue
                 
-            sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])        
+            sparx.set_position([c for c in possible_next if self._are_coordinates_walkable_line(c)])
+            sparx._not_in_dropped_state()
+            
         self._sparx_current_move_val = self.SPARX_MOVE_FACTOR
 
     def _qix_set_next_movement_direction(self):
@@ -487,9 +487,14 @@ class Grid:
             if not any(self._are_coordinates_empty(item) for item in neighbours):
                 dropped_walkable.append(walkable_node)
                 self._fill_node_from_coordinates(walkable_node,State.DROPPED_WALKABLE_LINE)
-                
+        
+        for coordinate in dropped_walkable:
+            while coordinate in self.border:
+                self.border.remove(coordinate)
+        
         self._add_to_claim(dropped_walkable)
         self._check_sparx_path(dropped_walkable)
+        
     
     def _are_coordinates_on_spritz(self,coordinates):
         return (self._get_node(coordinates).get_state() == State.SPRITZ)
