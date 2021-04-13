@@ -79,6 +79,7 @@ class Grid:
 
         
     def _update_player(self):
+        self._win()
         if self._check_if_lost_life():
             return None
             
@@ -115,8 +116,10 @@ class Grid:
         
     # fix
     def _add_to_claim(self,lst):
-        self.claimed += self.node_percentage * len(set( [(c[0],c[1]) for c in lst] ))
-    
+        number_of_nodes = len(set( [(c[0],c[1]) for c in lst] ))
+        self.claimed += self.node_percentage * number_of_nodes
+        self.player.increase_score(number_of_nodes)
+        
     def _check_if_lost_life(self):
         if not (self._check_if_sparx_killed() or self._fuse() or self._check_if_qix_killed()):
             return False
@@ -128,24 +131,40 @@ class Grid:
         else:
             self._reset_after_lost_life()
         return True
-     
+    
+    def _win(self):
+        if self.claimed < self.claim_target:
+            return
+        width = self.window.get_width()
+        height = self.window.get_height()
+        self._write_text(self.window,width/2,height/2,self._apply_center,"Congratulations",50)
+        self._write_text(self.window,width/2,height/2 + 50,self._apply_center,"Score: {}".format(self.player.get_score()),50)
+        self._write_text(self.window,width/2,height/2 + 100,self._apply_center,"Claimed: {}%".format(int(self.claimed)),50)
+        self._write_text(self.window,width/2,height/2 + 150,self._apply_center,"Remaining Lives: {}".format(self.player.get_lives()),50)
+        pygame.display.update()
+        self._time_wait(4)
+        pygame.quit()
+        
+    
     def _reset_game(self):
         pass
     
+    def _time_wait(self,seconds):
+        timeout = time.time() + seconds
+        while time.time() < timeout:
+            continue
     
     def _died(self):
         width = self.window.get_width()
         height = self.window.get_height()
-        notdone = True
+        #notdone = True
         
         self._write_text(self.window,width/2,height/2,self._apply_center,"Game Over",50)
         self._write_text(self.window,width/2,height/2 + 50,self._apply_center,"Score: {}".format(self.player.get_score()),50)
         #notdone = self._button("Play Again",width/2,height/2 + 100,(255,0,0),(127,0,0),self._reset_game)
-        #pygame.display.update()
-        timeout = time.time() + 3
+        
         pygame.display.update()
-        while time.time() < timeout:
-            continue
+        self._time_wait(3)
         pygame.quit()
         
     
@@ -171,11 +190,9 @@ class Grid:
         return True
     
     def _lost_life_screen(self):
-        timeout = time.time() + 1
         self._write_text(self.window,self.window.get_width()/2,self.window.get_height()/2,self._apply_center,"Died",40,(255,255,0))
         pygame.display.update()
-        while time.time() < timeout:
-            continue
+        self._time_wait(1)
 
     
     def _reset_after_lost_life(self):
@@ -249,10 +266,11 @@ class Grid:
         self._draw_stats(window)
         
     def _draw_stats(self,window):
-        self._write_text(window,0,window.get_height(),self._apply_bottom_left,"Lives:{}".format(self.player.get_lives()))
-        self._write_text(window,window.get_width(),window.get_height(),self._apply_bottom_right,"Score:{}".format(self.player.get_score()))
-        self._write_text(window,window.get_width()/2,window.get_height(),self._apply_bottom,"Claimed: {}%   Target:{}%".format(int(self.claimed),self.claim_target))
-    
+        self._write_text(window,0,window.get_height(),self._apply_bottom_left,"Lives: {}".format(self.player.get_lives()))
+        self._write_text(window,window.get_width()/2,window.get_height()- 45,self._apply_bottom,"Score: {}".format(self.player.get_score()))
+        self._write_text(window,window.get_width()/2,window.get_height(),self._apply_bottom,"Claimed: {}% ".format(int(self.claimed)))
+        self._write_text(window,window.get_width(),window.get_height(),self._apply_bottom_right,"Target: {}%".format(self.claim_target))
+     
     def _write_text(self,window,x_pos,y_pos,apply,txt,font_size = 32,color = (0,0,0)):
         font = pygame.font.Font('freesansbold.ttf',font_size)
         text = font.render(txt,True,color)

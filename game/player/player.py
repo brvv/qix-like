@@ -26,7 +26,7 @@ class Player:
         return self.score
     
     def increase_score(self,fact = 1):
-        self.get_score += 150 * fact
+        self.score += 150 * fact
     
     
     def draw(self, window, coord):
