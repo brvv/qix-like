@@ -509,8 +509,8 @@ class Grid:
         self._get_invalid_coordinates_to_add_sparx(player_position,sparx_spawn_offset,invalid_coordinates)
         valid_coordinates = player_position
         
-        while valid_coordinates in invalid_coordinates:
-            valid_coordinates = self.border[random.randint(0,len(self.border)-1)]
+        while valid_coordinates in invalid_coordinates or not self._are_coordinates_walkable_line(valid_coordinates):
+            valid_coordinates = random.choice(self.border)
             #print(valid_coordinates)
         
         adjacent = [c for c in self._get_neighbouring_nodes_coordinates(valid_coordinates) if self._are_coordinates_walkable_line(c)]
